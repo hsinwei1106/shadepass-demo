@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="ShadePass concept prototype: explore cross-brand foundation shade matching and personalized sample kits." />
-  <title>ShadePass | Find Your Match</title>
+  <title>ShadePass | Match Better  Waste Less Share More.</title>
   <style>
     /* =========================
        1. 品牌色彩與全站基礎設定
@@ -190,6 +190,14 @@
 #result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 @media(max-width:820px) { .hero .hero-grid { grid-template-columns:minmax(0,1fr); } .shade-art { min-height:160px; } }
 @media(max-width:540px) { #result-grid { grid-template-columns:minmax(0,1fr); } }
+    /* Keep the membership form aligned with the existing demo fields. */
+    #shade-profile { scroll-margin-top: 84px; }
+    #profile-name { width:100%; border:1px solid #d7b6a4; border-radius:12px; padding:12px; background:#fcf8f4; }
+    #profile-records h3 { margin:16px 0 8px; }
+    @media(max-width:540px) { .header-inner { flex-wrap:wrap; padding:8px 0; gap:6px 12px; } .nav-links { flex-wrap:wrap; } }
+    /* Distinguish the future full-size offer from the current NT$199 trial kit price. */
+    .trial-offer { border:1px solid #d7b6a4; border-radius:14px; padding:14px 16px; background:#fff7ed; color:#522718; line-height:1.55; }
+    .trial-offer small { color:#6a5145; }
   </style>
 </head>
 <body>
@@ -202,6 +210,7 @@
         <a class="hide-mobile" href="#why-us">Our Value</a>
         <a class="btn btn-primary" href="#demo">Try the Demo</a>
         <a href="#contact">Contact Us</a>
+        <a href="#shade-profile">Shade Profile</a>
       </nav>
     </div>
   </header>
@@ -275,7 +284,9 @@
                   <h3>What foundation do you use now?</h3>
                   <p class="muted">Choose a foundation and shade you have used.</p>
                   <div class="field"><label for="current-brand">Foundation brand</label><select id="current-brand" aria-label="Choose your current foundation brand"><option value="0">LANCÔME 蘭蔻</option><option value="1">shu uemura 植村秀</option><option value="2">YSL Beauty</option></select></div>
+                  <div class="field"><label for="current-product">Current foundation</label><select id="current-product"></select></div>
                   <div class="field"><label for="current-shade">Your current shade</label><select id="current-shade" aria-label="Choose your current foundation shade"><option value="">Choose your shade</option><option>P-00</option><option>P-01</option><option>PO-01</option><option>PO-02</option><option>PO-03</option><option>O-01</option><option>O-02</option><option>O-03</option><option>BO-01</option><option>BO-02</option><option>BO-03</option><option>BO-04</option><option>B-01</option><option>B-02</option></select></div>
+                  <div class="field"><label for="target-brand">Brand to try (optional)</label><select id="target-brand"></select></div>
                   <button id="find-match" class="btn btn-primary" type="button">Find My Match →</button>
                   <div class="demo-disclaimer">Product names and shade codes are based on Taiwan listings. Suggested matches are illustrative and await testing.</div>
                 </div>
@@ -292,8 +303,9 @@
             <section id="screen-2" class="screen hidden">
               <div class="eyebrow">Step 02 · Suggested alternatives</div>
               <h3>Your possible shade matches.</h3>
-              <p>Explore shade codes from the other two brands. Use the kit builder to select two shades from one foundation.</p>
+              <p>Compare two illustrative candidates per foundation. Add both shades to your trial kit and adjust them if you like.</p>
               <div id="result-grid" class="result-grid" aria-live="polite"></div>
+              <div class="screen-actions"><button id="save-match" class="btn btn-secondary" type="button">Save My Shade Profile</button></div>
               <div class="screen-actions"><button id="back-to-1" class="btn btn-ghost" type="button">← Change Shade</button><button id="to-kit" class="btn btn-primary push" type="button">Build My Trial Kit →</button></div>
               <div class="demo-disclaimer">Suggested matches are simulated and have not been tested for color accuracy, undertone, texture or wear.</div>
             </section>
@@ -309,7 +321,9 @@
                   <div class="field"><label for="kit-first">First shade</label><select id="kit-first"></select></div>
                   <div class="field"><label for="kit-second">Second shade</label><select id="kit-second"></select></div>
                   <div class="field"><label for="kit-skincare">Skincare sample</label><select id="kit-skincare"></select></div><div class="screen-actions"><button id="back-to-2" class="btn btn-ghost" type="button">← Explore More Matches</button></div></div>
-                <aside class="kit-box"><h4>Your Kit</h4><div id="kit-items" aria-live="polite"></div><div class="kit-price"><span>Demo kit fee</span><span>NT$199</span></div><div class="note">Illustrative fee only. No payment, shipping or inventory reservation takes place.</div><div class="screen-actions"><button id="place-demo-order" class="btn btn-primary" type="button">Simulate Trial Order →</button></div></aside>
+                <aside class="kit-box"><h4>Your Kit</h4><div id="kit-items" aria-live="polite"></div>
+                  <!-- Show the full-size offer once two trial shades have been added. -->
+                  <p id="kit-offer" class="trial-offer hidden"><strong>Try First. Enjoy 12% Off Full Size.</strong><br>先試再買，正貨享 88 折。<br><small>Demo offer for the full-size foundation after your trial.</small></p><div class="kit-price"><span>Demo kit fee</span><span>NT$199</span></div><div class="note">Illustrative fee only. No payment, shipping or inventory reservation takes place.</div><div class="screen-actions"><button id="place-demo-order" class="btn btn-primary" type="button">Simulate Trial Order →</button></div></aside>
               </div>
             </section>
 
@@ -318,9 +332,10 @@
               <div class="eyebrow">Step 04 · After your trial</div>
               <h3>Try. Review. Decide.</h3>
               <div class="thanks-panel"><div class="tick">✓</div><h4>Demo trial order created!</h4><p>Your selected samples are shown below. No real order was placed.</p><p id="order-summary" style="margin-top:9px;font-weight:700;"></p></div>
+              <p class="trial-offer"><strong>Found your shade? Enjoy 12% off full size.</strong><br>先試再買，正貨享 88 折。<br><small>Illustrative offer for the full-size foundation you tried.</small></p>
               <div class="review-panel">
                 <h4>How did your sample match?</h4>
-                <p class="note">Try the feedback feature. Your responses stay in this browser session and are not sent anywhere.</p>
+                <p class="note">Try the feedback feature. Use the save button to keep feedback in your browser profile. Feedback stays on this device.</p>
                 <div class="stars" aria-label="Rating out of five stars">
                   <button class="star" data-rating="1" type="button" aria-label="1 star">★</button>
                   <button class="star" data-rating="2" type="button" aria-label="2 stars">★</button>
@@ -329,11 +344,13 @@
                   <button class="star" data-rating="5" type="button" aria-label="5 stars">★</button>
                 </div>
                 <div class="field"><label for="review-notes">Optional feedback</label><textarea id="review-notes" maxlength="200" placeholder="Example: Good shade, but the texture feels too dry."></textarea></div>
+                <div class="field"><label for="best-shade">Which trial shade suited you best?</label><select id="best-shade"></select></div>
                 <button id="submit-review" class="btn btn-primary" type="button">Submit Demo Feedback</button>
-                <div id="feedback-confirmation" class="success-feedback hidden" role="status">Thank you! This feedback is simulated and has not been saved online.</div>
+                <button id="save-review" class="btn btn-secondary" type="button">Save Feedback to My Profile</button>
+                <div id="feedback-confirmation" class="success-feedback hidden" role="status">Thank you for trying the feedback demo. To keep this review, save it to your profile.</div>
                 <!-- 正貨購買入口只提供示意說明，不連接真實商家或付款頁。 -->
-                <div class="screen-actions"><button id="full-size-demo" class="btn btn-secondary" type="button">Explore Full-Size Options</button></div>
-                <div id="full-size-message" class="success-feedback hidden" role="status">Full-size purchase links and any trial discounts would appear here in a live product. No purchase is available in this academic demo.</div>
+                <div class="screen-actions"><button id="full-size-demo" class="btn btn-secondary" type="button">View Full-Size Offer</button></div>
+                <div id="full-size-message" class="success-feedback hidden" role="status">Your demo offer is 12% off the full-size foundation you tried. Redemption and payment are simulated.</div>
               </div>
               <div class="screen-actions"><button id="restart" class="btn btn-secondary" type="button">↻ Start Again</button></div>
             </section>
@@ -355,6 +372,25 @@
       </div>
     </section>
     <!-- The contact form previews a submission without network requests. -->
+    <!-- Demo registration and saved shade history. -->
+    <section id="shade-profile" class="benefits" tabindex="-1">
+      <div class="container">
+        <div class="section-heading"><h2 class="display">My Shade Profile</h2><p>Keep your matches and trial feedback for your next visit.</p></div>
+        <div class="kit-box" style="max-width:620px;margin:auto">
+          <p class="note">Demo membership. Your nickname and shade history are stored in this browser only.</p>
+          <form id="profile-form">
+            <div class="field"><label for="profile-name">Nickname</label><input id="profile-name" type="text" maxlength="40" required></div>
+            <button class="btn btn-primary" type="submit">Create Demo Membership</button>
+          </form>
+          <div id="profile-records"></div>
+          <div class="screen-actions">
+            <button id="resume-match" class="btn btn-primary hidden" type="button">Use My Saved Shade</button>
+            <button id="delete-profile" class="btn btn-ghost hidden" type="button">Clear Profile</button>
+          </div>
+          <p id="profile-status" role="status"></p>
+        </div>
+      </div>
+    </section>
     <section id="contact" class="benefits">
       <div class="container">
         <div class="section-heading"><h2 class="display">Contact Us</h2><p>Ask about a trial kit or explore a brand partnership.</p></div>
@@ -429,12 +465,23 @@
       label: brand + " · " + product,
       value: String(index)
     }));
-    fillSelect("current-brand", "Choose your foundation", foundationOptions, "0");
+    fillSelect("current-brand", "Choose your brand", foundations.map(({ brand }, index) => ({
+      label: brand,
+      value: String(index)
+    })), "0");
     fillSelect("kit-foundation", "Choose a foundation", foundationOptions);
     fillSelect("kit-skincare", "Choose one skincare sample", skincare.map(item => ({ label: item, value: item })));
 
     function updateSourceShades() {
       const foundation = foundations[byId("current-brand").value];
+      const target = byId("target-brand").value;
+      const brand = byId("current-brand").value;
+      const products = foundation ? [{ label: foundation.product, value: brand }] : [];
+      // The demo currently has one foundation per brand, so select it automatically.
+      fillSelect("current-product", "Choose your foundation", products, brand);
+      fillSelect("target-brand", "Compare all other brands", foundations
+        .map(({ brand }, index) => ({ label: brand, value: String(index) }))
+        .filter(option => option.value !== brand), target);
       fillSelect("current-shade", "Choose your shade", foundation ? shadeOptions(foundation) : []);
       byId("find-match").disabled = true;
     }
@@ -444,26 +491,34 @@
     });
     updateSourceShades();
 
-    // Compare illustrative depth groups. Each candidate opens its own foundation in the kit builder.
+    // Select two examples from the same demo depth group. Order is illustrative.
+    function getCandidates(brand, code, target) {
+      const source = foundations[brand];
+      const depth = source?.groups.findIndex(group => group.split(" ").includes(code));
+      if (depth === undefined || depth < 0) return [];
+      return foundations.flatMap((foundation, index) => {
+        const value = String(index);
+        if (brand === value || (target && target !== value)) return [];
+        return [{ foundation, value, codes: foundation.groups[depth].split(" ").slice(0, 2) }];
+      });
+    }
+
     function showMatches() {
-      const source = foundations[byId("current-brand").value];
-      const code = byId("current-shade").value;
-      if (!source || !code) return;
-      const depth = source.groups.findIndex(group => group.split(" ").includes(code));
-      if (depth < 0) return;
+      const candidates = getCandidates(byId("current-brand").value, byId("current-shade").value, byId("target-brand").value);
+      if (!candidates.length) return;
       const grid = byId("result-grid");
       grid.replaceChildren();
-      foundations.forEach((foundation, index) => {
-        if (foundation === source) return;
+      candidates.forEach(({ foundation, value, codes }) => {
         const card = addText(grid, "article", "", "kit-box");
         addText(card, "h4", foundation.brand);
         addText(card, "p", foundation.product);
-        addText(card, "p", foundation.groups[depth].split(" ").join(" · "));
-        const button = addText(card, "button", "Build Kit with This Foundation", "btn btn-secondary");
+        addText(card, "p", "Try first: " + codes[0]);
+        addText(card, "p", "Alternate shade: " + codes[1]);
+        const button = addText(card, "button", "Try These Two Shades", "btn btn-primary");
         button.type = "button";
         button.addEventListener("click", () => {
-          byId("kit-foundation").value = String(index);
-          updateKitShades(true);
+          byId("kit-foundation").value = value;
+          updateKitShades(true, codes);
           goToStep(3);
         });
       });
@@ -471,11 +526,11 @@
     }
 
     // Both shades must come from the same foundation; remove the first shade from the second menu.
-    function updateKitShades(reset) {
+    function updateKitShades(reset, suggestedCodes = ["", ""]) {
       const foundation = foundations[byId("kit-foundation").value];
       const options = foundation ? shadeOptions(foundation) : [];
-      const first = reset ? "" : byId("kit-first").value;
-      const second = reset ? "" : byId("kit-second").value;
+      const first = reset ? suggestedCodes[0] : byId("kit-first").value;
+      const second = reset ? suggestedCodes[1] : byId("kit-second").value;
       fillSelect("kit-first", "Choose first shade", options, first);
       fillSelect("kit-second", "Choose second shade", options.filter(({value}) => value !== first), second);
       refreshKit();
@@ -499,6 +554,9 @@
       summary.replaceChildren();
       items.forEach(item => addText(summary, "p", item, "kit-row"));
       if (!complete) addText(summary, "p", "Select two shades and one skincare sample.", "note");
+      // The offer applies to a later full-size order, not to the trial kit.
+      const hasPair = Boolean(byId("kit-first").value && byId("kit-second").value);
+      byId("kit-offer").classList.toggle("hidden", !hasPair);
       byId("place-demo-order").disabled = !complete;
     }
 
@@ -512,6 +570,11 @@
     function simulateOrder() {
       const { complete, items } = kitItems();
       if (!complete) return;
+      // Snapshot the trial before the user moves on to feedback.
+      const trialBrand = byId("kit-foundation").value;
+      const trialCodes = [byId("kit-first").value, byId("kit-second").value];
+      savedTrial = { brand: trialBrand, codes: trialCodes, sample: byId("kit-skincare").value };
+      fillSelect("best-shade", "No preference selected", trialCodes.map(code => ({ label:code, value:code })));
       byId("order-summary").textContent = items.join(" | ") + " · NT$199";
       reviewRating = 0;
       byId("review-notes").value = "";
@@ -557,6 +620,7 @@
     byId("place-demo-order").addEventListener("click", simulateOrder);
     byId("restart").addEventListener("click", () => {
       byId("current-brand").value = "0";
+      byId("target-brand").value = "";
       byId("kit-foundation").value = "";
       byId("kit-skincare").value = "";
       updateSourceShades();
@@ -579,6 +643,135 @@
       updateContactTopic();
       byId("contact-status").classList.remove("hidden");
     });
+
+    // Demo membership stays in this browser. No login, password or network request is used.
+    const profileKey = "shadepass.demo.profile.v1";
+    let profile = null;
+    let pendingSave = null;
+    let savedTrial = null;
+    try {
+      const data = JSON.parse(localStorage.getItem(profileKey));
+      if (data && typeof data.name === "string" && Array.isArray(data.history)) profile = data;
+    } catch {
+      // The demo remains usable when storage is restricted or an old record cannot be read.
+    }
+
+    function persistProfile(next) {
+      try {
+        if (next) localStorage.setItem(profileKey, JSON.stringify(next));
+        else localStorage.removeItem(profileKey);
+      } catch {
+        byId("profile-status").textContent = "Browser storage is unavailable. No profile changes were saved.";
+        return false;
+      }
+      profile = next;
+      renderProfile();
+      return true;
+    }
+
+    // Keep one entry per source shade, merging a later review into its saved match.
+    function withRecord(base, record) {
+      const previous = base.history.find(item => item.brand === record.brand && item.code === record.code);
+      const remaining = base.history.filter(item => item !== previous);
+      return { ...base, history: [{ ...previous, ...record }, ...remaining].slice(0, 12) };
+    }
+
+    function renderProfile() {
+      const records = byId("profile-records");
+      records.replaceChildren();
+      byId("profile-form").classList.toggle("hidden", Boolean(profile));
+      byId("delete-profile").classList.toggle("hidden", !profile);
+      byId("resume-match").classList.toggle("hidden", !profile?.history.length);
+      if (!profile) return;
+
+      addText(records, "h3", profile.name);
+      profile.history.forEach(record => {
+        const item = addText(records, "article", "");
+        addText(item, "h3", "Current shade: " + foundations[record.brand].brand + " " + record.code);
+        record.matches.forEach(match => addText(item, "p", match));
+        if (!record.trial) return;
+        const trial = record.trial;
+        addText(item, "p", "Trial shades: " + foundations[trial.brand].brand + " " + trial.codes.join(", "));
+        addText(item, "p", "Skincare sample: " + trial.sample);
+        if (trial.best) {
+          addText(item, "p", "Best fit: " + trial.best);
+          const button = addText(item, "button", "Match From This Shade", "btn btn-secondary");
+          button.type = "button";
+          button.addEventListener("click", () => matchSavedShade(trial.brand, trial.best));
+        }
+        addText(item, "p", "Rating: " + trial.rating + "/5");
+        if (trial.notes) addText(item, "p", trial.notes);
+      });
+    }
+
+    function captureMatch() {
+      const brand = byId("current-brand").value;
+      const code = byId("current-shade").value;
+      const candidates = getCandidates(brand, code, byId("target-brand").value);
+      return {
+        brand, code,
+        matches: candidates.map(({ foundation, codes }) => foundation.brand + ": " + codes.join(", "))
+      };
+    }
+
+    function openProfile(record) {
+      const section = byId("shade-profile");
+      byId("profile-status").textContent = "";
+      section.focus();
+      section.scrollIntoView({ behavior:"smooth", block:"start" });
+      if (!profile) {
+        pendingSave = record;
+        byId("profile-status").textContent = "Create your demo membership to save this record.";
+        byId("profile-name").focus({ preventScroll:true });
+      } else if (persistProfile(withRecord(profile, record))) {
+        byId("profile-status").textContent = "Saved to your shade profile.";
+      }
+    }
+
+    byId("save-match").addEventListener("click", () => openProfile(captureMatch()));
+    byId("save-review").addEventListener("click", () => {
+      if (!savedTrial || !reviewRating) {
+        window.alert("Please choose a star rating before saving your feedback.");
+        return;
+      }
+      openProfile({ ...captureMatch(), trial: { ...savedTrial, best:byId("best-shade").value,
+        rating:reviewRating, notes:byId("review-notes").value.trim() } });
+    });
+
+    byId("profile-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const name = byId("profile-name").value.trim();
+      if (!name) {
+        byId("profile-status").textContent = "Enter a nickname to create a demo membership.";
+        return;
+      }
+      const base = { name, history:[] };
+      if (!persistProfile(pendingSave ? withRecord(base, pendingSave) : base)) return;
+      pendingSave = null;
+      event.currentTarget.reset();
+      byId("profile-status").textContent = "Demo membership created.";
+    });
+
+    // Resume from either the original reference shade or a preferred trial shade.
+    function matchSavedShade(brand, code) {
+      byId("current-brand").value = brand;
+      byId("target-brand").value = "";
+      updateSourceShades();
+      byId("current-shade").value = code;
+      byId("find-match").disabled = false;
+      showMatches();
+    }
+    byId("resume-match").addEventListener("click", () => {
+      const { brand, code } = profile.history[0];
+      matchSavedShade(brand, code);
+    });
+
+    byId("delete-profile").addEventListener("click", () => {
+      if (window.confirm("Clear your demo profile and shade history from this browser?") && persistProfile(null)) {
+        byId("profile-status").textContent = "Profile cleared.";
+      }
+    });
+    renderProfile();
 </script>
 </body>
 </html>
