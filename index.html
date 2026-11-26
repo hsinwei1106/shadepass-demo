@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="ShadePass concept prototype: explore cross-brand foundation shade matching and personalized sample kits." />
-  <title>ShadePass | Match Better Waste Less Share More</title>
+  <title>ShadePass | Match Better. Waste Less. Share More.</title>
   <style>
     /* =========================
        1. 品牌色彩與全站基礎設定
@@ -377,10 +377,24 @@
       <div class="container">
         <div class="section-heading"><h2 class="display">My Shade Profile</h2><p>Keep your matches and trial feedback for your next visit.</p></div>
         <div class="kit-box" style="max-width:620px;margin:auto">
-          <p class="note">Demo membership. Your nickname and shade history are stored in this browser only.</p>
+          <!-- Email verification is independent of locally saved shade history. -->
+          <div style="margin-bottom:24px">
+            <h3>Email verification</h3>
+            <form id="verify-email-form">
+              <div class="field">
+                <label for="verify-email">Email address</label>
+                <input id="verify-email" type="email" autocomplete="email" required
+                  style="width:100%;border:1px solid #d7b6a4;border-radius:12px;padding:12px;background:#fcf8f4">
+              </div>
+              <button id="verify-submit" type="submit" class="btn btn-primary" disabled>Send Verification Email</button>
+            </form>
+            <p id="verify-status" role="status" aria-live="polite">Loading email verification…</p>
+            <noscript><p>Email verification requires JavaScript.</p></noscript>
+          </div>
+          <p class="note">Your nickname and shade history are stored in this browser only.</p>
           <form id="profile-form">
             <div class="field"><label for="profile-name">Nickname</label><input id="profile-name" type="text" maxlength="40" required></div>
-            <button class="btn btn-primary" type="submit">Create Demo Membership</button>
+            <button class="btn btn-primary" type="submit">Create Local Shade Profile</button>
           </form>
           <div id="profile-records"></div>
           <div class="screen-actions">
@@ -721,7 +735,7 @@
       section.scrollIntoView({ behavior:"smooth", block:"start" });
       if (!profile) {
         pendingSave = record;
-        byId("profile-status").textContent = "Create your demo membership to save this record.";
+        byId("profile-status").textContent = "Create a local shade profile to save this record.";
         byId("profile-name").focus({ preventScroll:true });
       } else if (persistProfile(withRecord(profile, record))) {
         byId("profile-status").textContent = "Saved to your shade profile.";
@@ -742,14 +756,14 @@
       event.preventDefault();
       const name = byId("profile-name").value.trim();
       if (!name) {
-        byId("profile-status").textContent = "Enter a nickname to create a demo membership.";
+        byId("profile-status").textContent = "Enter a nickname to create a local shade profile.";
         return;
       }
       const base = { name, history:[] };
       if (!persistProfile(pendingSave ? withRecord(base, pendingSave) : base)) return;
       pendingSave = null;
       event.currentTarget.reset();
-      byId("profile-status").textContent = "Demo membership created.";
+      byId("profile-status").textContent = "Local shade profile created.";
     });
 
     // Resume from either the original reference shade or a preferred trial shade.
@@ -772,6 +786,113 @@
       }
     });
     renderProfile();
+</script>
+<script type="module">
+
+  // Load only Firebase Authentication. A failed download does not stop ShadeMap.
+  const status = document.getElementById("verify-status");
+  const form = document.getElementById("verify-email-form");
+  const emailInput = document.getElementById("verify-email");
+  const submit = document.getElementById("verify-submit");
+  const emailKey = "shadepass.pendingVerificationEmail";
+  const returnURL = "https://hsinwei1106.github.io/shadepass-demo/";
+  const firebaseConfig = {
+    apiKey: "AIzaSyAUPaXjCarsA0OgCUMiiHwmbx0PCREZIv8",
+    authDomain: "shadepass-demo.firebaseapp.com",
+    projectId: "shadepass-demo",
+    appId: "1:179606934696:web:ee9fef3d6eb248133dde9d"
+  };
+
+  function readPendingEmail() {
+    try { return localStorage.getItem(emailKey) || ""; }
+    catch { return ""; }
+  }
+
+  function storePendingEmail(email) {
+    // If browser storage is blocked, the email can be entered again on return.
+    try {
+      if (email) localStorage.setItem(emailKey, email);
+      else localStorage.removeItem(emailKey);
+    } catch {}
+  }
+
+  function showError(error, fallback) {
+    const messages = {
+      "auth/expired-action-code": "This verification link expired. Reopen ShadePass to request a new one.",
+      "auth/invalid-action-code": "This link is invalid or already used. Reopen ShadePass to request a new one.",
+      "auth/invalid-email": "Enter the same email address you used to request the link.",
+      "auth/too-many-requests": "Too many attempts. Please wait and try again.",
+      "auth/network-request-failed": "Could not connect to Firebase. Check your connection and try again.",
+      "auth/unauthorized-continue-uri": "The return address is not authorized in Firebase.",
+      "auth/operation-not-allowed": "Email link sign-in is not enabled in Firebase."
+    };
+    status.textContent = messages[error.code] || fallback;
+  }
+
+  try {
+    const [{ initializeApp }, { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink,
+      signInWithEmailLink, signOut, inMemoryPersistence, setPersistence }] = await Promise.all([
+      import("https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js")
+    ]);
+    const auth = getAuth(initializeApp(firebaseConfig));
+    await setPersistence(auth, inMemoryPersistence);
+    const incomingLink = location.href;
+    const returning = isSignInWithEmailLink(auth, incomingLink);
+
+    async function verify(email) {
+      submit.disabled = true;
+      status.textContent = "Verifying your email…";
+      try {
+        const { user } = await signInWithEmailLink(auth, email, incomingLink);
+        if (!user.emailVerified) throw new Error("Email verification incomplete");
+        // End the temporary sign-in because this demo ends at verification.
+        await signOut(auth);
+        storePendingEmail("");
+        history.replaceState(null, "", returnURL + "#shade-profile");
+        form.hidden = true;
+        status.textContent = "Email verified.";
+      } catch (error) {
+        showError(error, "We could not verify this email. Check the address and try again.");
+      } finally {
+        submit.disabled = false;
+      }
+    }
+
+    submit.disabled = false;
+    status.textContent = "";
+    if (returning) {
+      submit.textContent = "Verify Email";
+      status.textContent = "Enter the email address that received the link.";
+      document.getElementById("shade-profile").scrollIntoView();
+    }
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const email = emailInput.value.trim();
+      if (returning) return verify(email);
+
+      submit.disabled = true;
+      status.textContent = "Requesting verification email…";
+      try {
+        await sendSignInLinkToEmail(auth, email, { url: returnURL, handleCodeInApp: true });
+        storePendingEmail(email);
+        status.textContent = "Check your inbox for the verification link.";
+      } catch (error) {
+        showError(error, "We could not request a verification email. Please try again.");
+      } finally {
+        submit.disabled = false;
+      }
+    });
+
+    const savedEmail = returning && readPendingEmail();
+    if (savedEmail) {
+      emailInput.value = savedEmail;
+      await verify(savedEmail);
+    }
+  } catch {
+    status.textContent = "Email verification is unavailable. Reload to try again.";
+  }
 </script>
 </body>
 </html>
