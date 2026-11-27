@@ -198,6 +198,21 @@
     /* Distinguish the future full-size offer from the current NT$199 trial kit price. */
     .trial-offer { border:1px solid #d7b6a4; border-radius:14px; padding:14px 16px; background:#fff7ed; color:#522718; line-height:1.55; }
     .trial-offer small { color:#6a5145; }
+    /* Keep the desktop vision heading on one line and let it wrap on smaller screens. */
+    @media (min-width: 900px) {
+      #why-us .section-heading { max-width: 900px; }
+      #why-us .section-heading p { max-width: 680px; margin-inline: auto; }
+    }
+
+    /* Shade choices are labeled radio cards so they also work with a keyboard. */
+    .shade-showdown { margin: 0 0 20px; padding: 16px; border: 1px solid var(--border); border-radius: 14px; }
+    .shade-showdown legend { font-weight: 700; padding-inline: 6px; }
+    .shade-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .shade-choice { display: flex; gap: 10px; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #fffaf7; cursor: pointer; }
+    .shade-choice:last-child { grid-column: 1 / -1; }
+    .shade-choice:has(input:checked) { border-color: var(--brown); background: #f3e9df; }
+    .shade-choice input { accent-color: var(--brown); }
+    .shade-choice strong { display: block; }
   </style>
 </head>
 <body>
@@ -344,7 +359,16 @@
                   <button class="star" data-rating="5" type="button" aria-label="5 stars">★</button>
                 </div>
                 <div class="field"><label for="review-notes">Optional feedback</label><textarea id="review-notes" maxlength="200" placeholder="Example: Good shade, but the texture feels too dry."></textarea></div>
-                <div class="field"><label for="best-shade">Which trial shade suited you best?</label><select id="best-shade"></select></div>
+                <!-- Compare the exact two codes included in the trial kit. -->
+                <fieldset class="shade-showdown">
+                  <legend>Shade Showdown</legend>
+                  <p class="note">After trying both samples, choose the shade that worked best for you.</p>
+                  <div id="shade-choices" class="shade-choices"></div>
+                  <div id="shade-reason-field" class="field hidden">
+                    <label for="shade-reason">What made the difference? (optional)</label>
+                    <select id="shade-reason"></select>
+                  </div>
+                </fieldset>
                 <button id="submit-review" class="btn btn-primary" type="button">Submit Demo Feedback</button>
                 <button id="save-review" class="btn btn-secondary" type="button">Save Feedback to My Profile</button>
                 <div id="feedback-confirmation" class="success-feedback hidden" role="status">Thank you for trying the feedback demo. To keep this review, save it to your profile.</div>
@@ -580,6 +604,34 @@
     byId("kit-skincare").addEventListener("change", refreshKit);
     updateKitShades(true);
 
+    // Reset the comparison for each trial order and tailor reasons to the choice.
+    function renderShadeShowdown(codes) {
+      const choices = byId("shade-choices");
+      const reasonField = byId("shade-reason-field");
+      choices.replaceChildren();
+      reasonField.classList.add("hidden");
+      fillSelect("shade-reason", "Choose a reason", []);
+      [...codes, "neither"].forEach((code, index) => {
+        const label = addText(choices, "label", "", "shade-choice");
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "shade-comparison";
+        radio.value = code;
+        label.appendChild(radio);
+        const text = addText(label, "span", "");
+        const neither = code === "neither";
+        addText(text, "strong", neither ? "Neither" : index === 0 ? "Shade A" : "Shade B");
+        if (!neither) addText(text, "span", code);
+        radio.addEventListener("change", () => {
+          const reasons = neither
+            ? ["Both looked too yellow", "Both looked too pink", "Both were too deep", "Both were too light", "Other"]
+            : ["Closer to my skin tone", "Better undertone", "The other shade looked too yellow", "The other shade was too deep", "The other shade was too light", "Other"];
+          fillSelect("shade-reason", "Choose a reason", reasons.map(reason => ({ label:reason, value:reason })));
+          reasonField.classList.remove("hidden");
+        });
+      });
+    }
+
     // Preview the selected kit and reset feedback for the new simulated order.
     function simulateOrder() {
       const { complete, items } = kitItems();
@@ -588,7 +640,7 @@
       const trialBrand = byId("kit-foundation").value;
       const trialCodes = [byId("kit-first").value, byId("kit-second").value];
       savedTrial = { brand: trialBrand, codes: trialCodes, sample: byId("kit-skincare").value };
-      fillSelect("best-shade", "No preference selected", trialCodes.map(code => ({ label:code, value:code })));
+      renderShadeShowdown(trialCodes);
       byId("order-summary").textContent = items.join(" | ") + " · NT$199";
       reviewRating = 0;
       byId("review-notes").value = "";
@@ -713,6 +765,8 @@
           button.type = "button";
           button.addEventListener("click", () => matchSavedShade(trial.brand, trial.best));
         }
+        if (trial.comparison === "neither") addText(item, "p", "Shade comparison: Neither");
+        if (trial.reason) addText(item, "p", "Reason: " + trial.reason);
         addText(item, "p", "Rating: " + trial.rating + "/5");
         if (trial.notes) addText(item, "p", trial.notes);
       });
@@ -748,7 +802,11 @@
         window.alert("Please choose a star rating before saving your feedback.");
         return;
       }
-      openProfile({ ...captureMatch(), trial: { ...savedTrial, best:byId("best-shade").value,
+      // Keep "Neither" separate so it can never become a saved foundation code.
+      const choice = byId("shade-choices").querySelector('input:checked')?.value || "";
+      const best = savedTrial.codes.includes(choice) ? choice : "";
+      openProfile({ ...captureMatch(), trial: { ...savedTrial, best,
+        comparison:choice, reason:byId("shade-reason").value,
         rating:reviewRating, notes:byId("review-notes").value.trim() } });
     });
 
